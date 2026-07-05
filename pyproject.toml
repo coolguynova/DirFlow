@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "local-file-organizer"
+version = "1.0.0"
+description = "A lightweight real-time background file organization daemon for Linux."
+readme = "README.md"
+authors = [
+    { name = "The Local File Organizer Authors" }
+]
+license = { file = "LICENSE" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+]
+dependencies = [
+    "watchdog>=3.0.0",
+]
+requires-python = ">=3.8"
+
+[project.scripts]
+file-organizer = "organizer:main"

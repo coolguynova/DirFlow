@@ -1,0 +1,13 @@
+[Unit]
+Description=Lightweight Local File Organizer Daemon
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/path/to/your/local-file-organizer
+ExecStart=/usr/bin/python organizer.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
