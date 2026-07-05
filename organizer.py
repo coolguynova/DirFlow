@@ -10,6 +10,7 @@ import queue
 import threading
 import collections
 import re
+import subprocess
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from typing import Optional, List, Dict, Tuple, Deque
@@ -77,6 +78,22 @@ DRY_RUN: bool = False
 TRACKED_DIR: str = config.TRACKED_DIR
 
 processing_queue: queue.Queue = queue.Queue()
+
+def send_notification(title: str, message: str) -> None:
+    """Dispatches a native desktop notification asynchronously (zero external dependencies)."""
+    if not getattr(config, "ENABLE_NOTIFICATIONS", True):
+        return
+    try:
+        if sys.platform == "linux":
+            subprocess.Popen(["notify-send", title, message], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        elif sys.platform == "darwin":
+            applescript = f'display notification "{message}" with title "{title}"'
+            subprocess.Popen(["osascript", "-e", applescript], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        elif sys.platform == "win32":
+            ps_command = f"[void] [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); $n = New-Object System.Windows.Forms.NotifyIcon; $n.Icon = [System.Drawing.SystemIcons]::Information; $n.BalloonTipTitle = '{title}'; $n.BalloonTipText = '{message}'; $n.Visible = $true; $n.ShowBalloonTip(3000)"
+            subprocess.Popen(["powershell", "-Command", ps_command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:
+        logging.debug(f"Failed to trigger native desktop notification: {e}")
 
 def is_file_locked(file_path: str) -> bool:
     """Checks if a file is write-locked by another process (cross-platform)."""
@@ -188,6 +205,7 @@ class FileSorterEngine:
             dest_hash = get_file_hash(destination)
             if src_hash and dest_hash and src_hash == dest_hash:
                 logging.info(f"Duplicate content detected for {filename}. Cleaned up source file.")
+                send_notification("DirFlow", f"Cleaned up duplicate file: {filename}")
                 total_duplicates += 1
                 if not DRY_RUN:
                     try:
@@ -209,6 +227,7 @@ class FileSorterEngine:
             try:
                 shutil.move(file_path, destination)
                 logging.info(f"Successfully moved: {filename} -> {os.path.basename(target_folder)}/")
+                send_notification("DirFlow", f"Moved {filename} -> {os.path.basename(target_folder)}/")
                 total_moved += 1
                 break
             except (PermissionError, FileNotFoundError) as error:

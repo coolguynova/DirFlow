@@ -13,6 +13,9 @@ OTHER_FOLDER = 'Others'
 # Enable content-based (hash) duplicate checking on name collision
 ENABLE_DEDUPLICATION = True
 
+# Enable native desktop notifications on file organization
+ENABLE_NOTIFICATIONS = True
+
 # Route extensions to their respective folders
 EXTENSION_MAP = {
     # Documents

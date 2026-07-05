@@ -12,8 +12,9 @@ A lightweight, real-time background file sorter for Linux, macOS, and Windows. I
 ## Features
 
 - **Low Overhead**: Runs as a background daemon consuming <15MB RAM. Processes tasks sequentially using a queue to keep directory monitoring non-blocking.
-- **TUI Dashboard**: Renders a live terminal dashboard showing uptime, queue sizes, and file actions. Falls back to standard logging when running in the background (e.g. systemd).
+- **TUI Dashboard**: Renders a live terminal dashboard showing uptime, queue sizes, and file actions. Falls back to standard logging when running in the background.
 - **Collision Deduplication**: Performs SHA-256 hash checks during filename collisions, removing exact duplicates instead of creating redundant files (like `file_(1).ext`).
+- **Desktop Notifications**: Triggers native, non-blocking desktop notifications (using `notify-send`, AppleScript, or PowerShell balloons) upon file sorting or cleanup.
 - **Write-Lock Aware**: Uses system-level locks (`fcntl` on Unix, exclusive sharing checks on Windows) combined with size checks to ensure downloads are complete before moving them.
 - **Cross-Platform**: Automated setup scripts configure and launch background agents on Linux, macOS, and Windows natively.
 

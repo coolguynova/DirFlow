@@ -10,9 +10,12 @@ class TestFileOrganizer(unittest.TestCase):
         self.test_dir = tempfile.mkdtemp()
         self.patcher_tracked = patch('organizer.TRACKED_DIR', self.test_dir)
         self.mock_tracked = self.patcher_tracked.start()
+        self.patcher_notif = patch('organizer.config.ENABLE_NOTIFICATIONS', False)
+        self.patcher_notif.start()
         
     def tearDown(self):
         self.patcher_tracked.stop()
+        self.patcher_notif.stop()
         shutil.rmtree(self.test_dir)
         
     def test_safe_destination(self):
