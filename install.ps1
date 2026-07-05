@@ -19,9 +19,9 @@ if (Test-Path $pythonwBin) {
 }
 
 $startupFolder = [System.Environment]::GetFolderPath('Startup')
-$shortcutPath = Join-Path $startupFolder "LocalFileOrganizer.lnk"
+$shortcutPath = Join-Path $startupFolder "DirFlow.lnk"
 
-echo "Installing Local File Organizer to Windows Startup..."
+echo "Installing DirFlow to Windows Startup..."
 
 # Create shortcut using WScript.Shell COM object
 $WshShell = New-Object -ComObject WScript.Shell
@@ -29,7 +29,7 @@ $Shortcut = $WshShell.CreateShortcut($shortcutPath)
 $Shortcut.TargetPath = $execBin
 $Shortcut.Arguments = """$scriptDir\organizer.py"""
 $Shortcut.WorkingDirectory = $scriptDir
-$Shortcut.Description = "Lightweight Local File Organizer Daemon"
+$Shortcut.Description = "DirFlow Daemon"
 $Shortcut.Save()
 
 # Stop any running instances first

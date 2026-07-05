@@ -1,4 +1,4 @@
-# ​‌​​​‌​​​‌‌​​‌​‌​‌‌‌​‌‌​​‌‌​​‌​‌​‌‌​‌‌​​​‌‌​‌‌‌‌​‌‌‌​​​​​‌‌​​‌​‌​‌‌​​‌​​​​‌​​​​​​‌‌​​​‌​​‌‌‌‌​​‌​​‌​​​​​​‌​​‌‌‌​​‌‌​‌‌‌‌​‌‌‌​‌‌​​‌‌​​​​‌​​‌​​​​​​​‌​‌‌​‌​​‌​​​​​​‌​​‌‌​​​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​​​​‌​‌‌​‌‌​​​​‌​​​​​​‌​​​‌‌​​‌‌​‌​​‌​‌‌​‌‌​​​‌‌​​‌​‌​​‌​​​​​​‌​​‌‌‌‌​‌‌‌​​‌​​‌‌​​‌‌‌​‌‌​​​​‌​‌‌​‌‌‌​​‌‌​‌​​‌​‌‌‌‌​‌​​‌‌​​‌​‌​‌‌‌​​‌​
+# ​‌​​​‌​​​‌‌​​‌​‌​‌‌‌​‌‌​​‌‌​​‌​‌​‌‌​‌‌​​​‌‌​‌‌‌‌​‌‌‌​​​​​‌‌​​‌​‌​‌‌​​‌​​​​‌​​​​​​‌‌​​​‌​​‌‌‌‌​​‌​​‌​​​​​​‌​​‌‌‌​​‌‌​‌‌‌‌​‌‌‌​‌‌​​‌‌​​​​‌​​‌​​​​​​​‌​‌‌​‌​​‌​​​​​​‌​​​‌​​​‌‌​‌​​‌​‌‌‌​​‌​​‌​​​‌‌​​‌‌​‌‌​​​‌‌​‌‌‌‌​‌‌‌​‌‌‌
 import os
 import sys
 import time
@@ -276,11 +276,11 @@ def print_rules() -> None:
     """Prints a beautiful summary of the configured routing rules."""
     print("\n\033[1;36m", end="")
     print(r"""
-  ___ _ _        ___                       _
- | __(_) |___   / _ \ _ _ __ _ __ _ _ _ (_)______ _ _
- | _|| | / -_) | (_) | '_/ _` / _` | ' \| |_ / -_) '_|
- |_| |_|_\___|  \___/|_| \__, \__,_|_||_|_/__\___|_|
-                         |___/                     """)
+  ___  _      ___ _
+ |   \(_)_ _ | __| |___ _ __
+ | |) | | '_|| _|| / _ \ V  V /
+ |___/|_|_|  |_| |_\___/\_/\_/ 
+                               """)
     print("\033[0m", end="")
     print("\033[1m=== Active Configurations ===\033[0m")
     print(f"\033[1mDefault Monitored Folder:\033[0m {config.TRACKED_DIR}")
@@ -341,11 +341,11 @@ def draw_tui() -> None:
         truncated_dir = "..." + TRACKED_DIR[-(max_dir_len-3):]
 
     sys.stdout.write(clear_screen)
-    print(f"{cyan}" + r"""  ___ _ _        ___                       _
- | __(_) |___   / _ \ _ _ __ _ __ _ _ _ (_)______ _ _
- | _|| | / -_) | (_) | '_/ _` / _` | ' \| |_ / -_) '_|
- |_| |_|_\___|  \___/|_| \__, \__,_|_||_|_/__\___|_|
-                         |___/                     """ + f"{reset}")
+    print(f"{cyan}" + r"""  ___  _      ___ _
+ |   \(_)_ _ | __| |___ _ __
+ | |) | | '_|| _|| / _ \ V  V /
+ |___/|_|_|  |_| |_\___/\_/\_/ 
+                               """ + f"{reset}")
     
     # Render Dashboard Panel (Internal printable width: exactly 58 characters)
     # Left border: "│ " (2 chars)
@@ -366,8 +366,6 @@ def draw_tui() -> None:
     for i in range(6):
         if i < len(feed):
             line = feed[i]
-            # format_feed_line returns formatted 56 print width string.
-            # "▸ " (2 chars) + format_feed_line (56 chars) = 58 characters content width inside box
             print(f"{cyan}│ {reset}▸ {format_feed_line(line, width=56)}{cyan} │{reset}")
         else:
             print(f"{cyan}│                                                            │{reset}")
@@ -382,7 +380,7 @@ def main() -> None:
     if os.name == 'nt':
         os.system('')
 
-    parser = argparse.ArgumentParser(description="Lightweight real-time file organizer daemon.")
+    parser = argparse.ArgumentParser(description="DirFlow: Lightweight real-time file organizer daemon.")
     parser.add_argument('--dir', type=str, default=config.TRACKED_DIR, help="Directory to monitor and organize.")
     parser.add_argument('--dry-run', action='store_true', help="Log actions without modifying any files.")
     parser.add_argument('--once', action='store_true', help="Run a single folder sweep and exit immediately.")

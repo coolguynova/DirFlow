@@ -1,14 +1,13 @@
 ```text
-  ___ _ _        ___                       _
- | __(_) |___   / _ \ _ _ __ _ __ _ _ _ (_)______ _ _
- | _|| | / -_) | (_) | '_/ _` / _` | ' \| |_ / -_) '_|
- |_| |_|_\___|  \___/|_| \__, \__,_|_||_|_/__\___|_|
-                         |___/
+  ___  _      ___ _
+ |   \(_)_ _ | __| |___ _ __
+ | |) | | '_|| _|| / _ \ V  V /
+ |___/|_|_|  |_| |_\___/\_/\_/
 ```
 
-# Local File Organizer
+# DirFlow
 
-A lightweight, real-time background file organization daemon for Linux. It monitors your specified directories (like `~/Downloads`), detects new file additions or modifications, and routes them to structured directories based on their file extensions.
+A lightweight, real-time background file organization daemon for Linux, macOS, and Windows. It monitors your specified directories (like `~/Downloads`), detects new file additions or modifications, and routes them to structured directories based on their file extensions.
 
 ## Features
 
@@ -17,30 +16,30 @@ A lightweight, real-time background file organization daemon for Linux. It monit
   - Offloads tasks to a standard `queue.Queue` worker thread.
   - Hashing is performed *only* on file name collisions.
   - Reads files in tiny 64KB chunks to keep memory usage under 20MB.
-- **Live Terminal TUI Dashboard**: Automatically renders a live dashboard showing system status, file stats, and activity feed when run interactively. Falls back to plain logs when run as a background service.
+- **Live Terminal TUI Dashboard**: Automatically renders a live dashboard showing system status, file stats, and activity feed with colored badges when run interactively. Falls back to plain logs when run as a background service.
 - **Strict PEP-484 Typing**: Fully type-annotated code structure for robustness.
 - **Smart Duplicate Prevention**: Computes SHA-256 content hashes when naming collisions occur. If content matches exactly, it cleans up the redundant file instead of creating renaming duplicates (e.g. `file_(1).ext`).
 - **Unmapped Extensions Routing**: Routes files with unrecognized extensions to a fallback `Others/` folder rather than ignoring them.
 - **Robust Error Handling**: Automatically retries locked or busy files (e.g., active browser writes) with backoff.
 - **CLI Options**: Supports targeting custom directories and dry-run execution modes.
-- **Systemd Service Support**: Easy deployment as a background service.
+- **Multi-Platform Daemon Support**: Easy deployment as a background service on Linux, macOS, and Windows.
 
 ---
 
 ## Installation
 
 ### Option A: Install System-Wide (Recommended)
-You can install the file organizer system-wide using `pip` from the repository root:
+You can install DirFlow system-wide using `pip` from the repository root:
 ```bash
 pip install .
 ```
-This registers the command `file-organizer` system-wide.
+This registers the command `dirflow` system-wide.
 
 ### Option B: Development/Manual Run
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/local-file-organizer.git
-   cd local-file-organizer
+   git clone https://github.com/yourusername/dirflow.git
+   cd dirflow
    ```
 2. Install dependencies:
    ```bash
@@ -64,7 +63,7 @@ Custom options can be configured directly inside `config.py`:
 
 If installed system-wide:
 ```bash
-file-organizer
+dirflow
 ```
 
 Otherwise, run directly:
@@ -106,15 +105,15 @@ python3 -m unittest discover tests/
 
 ## Deploy as a Background Daemon (Linux, macOS, & Windows)
 
-You can run the file organizer continuously in the background. Automated installation scripts are provided to configure the path mappings dynamically and run the organizer on system startup or login.
+You can run DirFlow continuously in the background. Automated installation scripts are provided to configure the path mappings dynamically and run the organizer on system startup or login.
 
 ### Linux (Systemd) & macOS (Launchd)
 Run the Unix installer script from the terminal:
 ```bash
 ./install.sh
 ```
-* **On Linux**: Registers and starts a background `systemd` user service.
-* **On macOS**: Registers and starts a background `launchd` LaunchAgent daemon.
+* **On Linux**: Registers and starts a background `systemd` user service (`dirflow.service`).
+* **On macOS**: Registers and starts a background `launchd` LaunchAgent daemon (`com.dirflow.daemon`).
 
 ### Windows (Startup Shortcut)
 Run the PowerShell installer script:
@@ -128,15 +127,15 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 ## Managing the Service
 
 ### Linux (Systemd):
-* **Status**: `systemctl --user status local-file-organizer.service`
-* **Stop**: `systemctl --user stop local-file-organizer.service`
+* **Status**: `systemctl --user status dirflow.service`
+* **Stop**: `systemctl --user stop dirflow.service`
 
 ### macOS (Launchd):
-* **Stop**: `launchctl unload ~/Library/LaunchAgents/com.fileorganizer.daemon.plist`
-* **Start**: `launchctl load -w ~/Library/LaunchAgents/com.fileorganizer.daemon.plist`
+* **Stop**: `launchctl unload ~/Library/LaunchAgents/com.dirflow.daemon.plist`
+* **Start**: `launchctl load -w ~/Library/LaunchAgents/com.dirflow.daemon.plist`
 
 ### Windows (Startup):
-* **Stop**: Stop pythonw from Windows Task Manager or run `Stop-Process -Name 'pythonw'` in PowerShell.
+* **Stop**: Stop `pythonw` from Windows Task Manager or run `Stop-Process -Name 'pythonw'` in PowerShell.
 
 ## License
 

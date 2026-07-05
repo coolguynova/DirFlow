@@ -1,10 +1,10 @@
 [Unit]
-Description=Lightweight Local File Organizer Daemon
+Description=DirFlow: Lightweight Local File Organizer Daemon
 After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/path/to/your/local-file-organizer
+WorkingDirectory=/path/to/your/dirflow
 ExecStart=/usr/bin/python organizer.py
 Restart=on-failure
 RestartSec=5

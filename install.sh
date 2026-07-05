@@ -15,7 +15,7 @@ fi
 if [ "$OS_TYPE" = "Darwin" ]; then
     # macOS launchd setup
     echo "Detected macOS (Darwin). Installing LaunchAgent daemon..."
-    PLIST_NAME="com.fileorganizer.daemon.plist"
+    PLIST_NAME="com.dirflow.daemon.plist"
     LAUNCH_AGENTS_DIR="$HOME/Library/LaunchAgents"
     mkdir -p "$LAUNCH_AGENTS_DIR"
     PLIST_PATH="$LAUNCH_AGENTS_DIR/$PLIST_NAME"
@@ -27,7 +27,7 @@ if [ "$OS_TYPE" = "Darwin" ]; then
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.fileorganizer.daemon</string>
+    <string>com.dirflow.daemon</string>
     <key>ProgramArguments</key>
     <array>
         <string>$PYTHON_BIN</string>
@@ -65,7 +65,7 @@ EOF
 elif [ "$OS_TYPE" = "Linux" ]; then
     # Linux systemd setup
     echo "Detected Linux. Installing systemd service..."
-    SERVICE_NAME="local-file-organizer.service"
+    SERVICE_NAME="dirflow.service"
     SYSTEMD_USER_DIR="$HOME/.config/systemd/user"
     mkdir -p "$SYSTEMD_USER_DIR"
 
