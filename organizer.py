@@ -16,10 +16,8 @@ from typing import Optional, List, Dict, Tuple, Deque
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-# Import custom configurations
 import config
 
-# Global variables for TUI and stats tracking
 start_time: float = time.time()
 total_moved: int = 0
 total_duplicates: int = 0
@@ -29,7 +27,6 @@ spinner_idx: int = 0
 spinner_chars: List[str] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
 
 class ColorFormatter(logging.Formatter):
-    """Custom logging formatter that adds ANSI colors for console stream handlers."""
     GREY = "\x1b[38;20m"
     GREEN = "\x1b[32;20m"
     YELLOW = "\x1b[33;20m"
@@ -53,18 +50,16 @@ class ColorFormatter(logging.Formatter):
         return formatter.format(record)
 
 class TuiLogHandler(logging.Handler):
-    """Redirects logs directly into the TUI activity deque with colored badges instead of printing."""
+    """Redirects logs directly into the TUI activity feed with status badges."""
     def emit(self, record: logging.LogRecord) -> None:
         try:
             clean_msg = record.getMessage()
             timestamp = datetime.now().strftime('%H:%M:%S')
 
-            # Truncate message to prevent TUI box overflow
             max_msg_len = 40
             if len(clean_msg) > max_msg_len:
                 clean_msg = clean_msg[:max_msg_len - 3] + "..."
 
-            # Prepend a colored badge based on log content
             if "Successfully moved:" in clean_msg:
                 badge = "\033[1;32m[MOVE]\033[0m"
             elif "Duplicate content" in clean_msg:
@@ -78,24 +73,20 @@ class TuiLogHandler(logging.Handler):
         except Exception:
             self.handleError(record)
 
-# Global variables for CLI options
 DRY_RUN: bool = False
 TRACKED_DIR: str = config.TRACKED_DIR
 
-# Thread-safe queue for file processing tasks
 processing_queue: queue.Queue = queue.Queue()
 
 def is_file_locked(file_path: str) -> bool:
-    """Checks if a file is currently locked/written to by another process.
-    Handles read-only permissions and Windows sharing violations safely.
-    """
+    """Checks if a file is write-locked by another process (cross-platform)."""
     if os.name == 'nt':
         try:
             with open(file_path, 'ab'):
                 pass
             return False
         except OSError as e:
-            if getattr(e, 'winerror', 0) == 32:
+            if getattr(e, 'winerror', 0) == 32:  # Sharing violation
                 return True
             return False
     else:
@@ -111,7 +102,7 @@ def is_file_locked(file_path: str) -> bool:
             return True
 
 def get_file_hash(file_path: str) -> Optional[str]:
-    """Calculates SHA-256 hash of a file in small chunks to keep RAM usage extremely low (<1MB)."""
+    """Computes SHA-256 hash in 64KB chunks to keep memory usage under 1MB."""
     hasher = hashlib.sha256()
     try:
         with open(file_path, 'rb') as f:
@@ -125,7 +116,7 @@ def get_file_hash(file_path: str) -> Optional[str]:
 class FileSorterEngine:
     @staticmethod
     def get_safe_destination(target_folder: str, filename: str) -> str:
-        """Prevents duplicate files from overwriting each other."""
+        """Appends a counter to the filename to avoid overwrites."""
         base, extension = os.path.splitext(filename)
         counter = 1
         destination_path = os.path.join(target_folder, filename)
@@ -139,7 +130,7 @@ class FileSorterEngine:
 
     @staticmethod
     def is_file_ready(file_path: str) -> bool:
-        """Ensures file size is stable and it is not locked before moving."""
+        """Verifies a file is released by writer and size is stable before moving."""
         try:
             if not os.path.exists(file_path):
                 return False
@@ -167,18 +158,15 @@ class FileSorterEngine:
 
         filename = os.path.basename(file_path)
         
-        # Skip hidden files
         if filename.startswith('.'):
             return
 
         _, ext = os.path.splitext(filename)
         ext = ext.lower()
 
-        # Ignore active web download cache files
         if ext in config.TEMP_EXTENSIONS:
             return
 
-        # Determine target folder
         target_subfolder: Optional[str] = None
         if ext in config.EXTENSION_MAP:
             target_subfolder = config.EXTENSION_MAP[ext]
@@ -193,7 +181,6 @@ class FileSorterEngine:
         if not cls.is_file_ready(file_path):
             return
 
-        # Check if target already exists and match hash
         destination = os.path.join(target_folder, filename)
         
         if os.path.exists(destination) and config.ENABLE_DEDUPLICATION:
@@ -209,17 +196,14 @@ class FileSorterEngine:
                         logging.error(f"Failed to delete duplicate source {filename}: {e}")
                 return
 
-        # Get unique destination path if it still conflicts
         destination = cls.get_safe_destination(target_folder, filename)
 
         if DRY_RUN:
             logging.info(f"[DRY-RUN] Would move: {filename} -> {os.path.basename(target_folder)}/")
             return
 
-        # Create target directory
         os.makedirs(target_folder, exist_ok=True)
 
-        # Retry loop for locked or busy files
         retries = 3
         for attempt in range(retries):
             try:
@@ -238,7 +222,7 @@ class FileSorterEngine:
                 break
 
 def queue_worker() -> None:
-    """Background worker thread processing filesystem events sequentially without blocking watchdog."""
+    """Consumes the task queue sequentially to keep filesystem events non-blocking."""
     while True:
         file_path = processing_queue.get()
         if file_path is None:
@@ -251,7 +235,6 @@ def queue_worker() -> None:
             processing_queue.task_done()
 
 class DownloadFolderHandler(FileSystemEventHandler):
-    """Listens to active file modifications in real-time and enqueues tasks."""
     def on_modified(self, event) -> None:
         if event.is_directory:
             return
@@ -263,7 +246,6 @@ class DownloadFolderHandler(FileSystemEventHandler):
         processing_queue.put(event.src_path)
 
 def run_initial_sweep() -> None:
-    """Cleans up preexisting files inside the folder right at startup."""
     logging.info(f"Starting initial folder sweep on: {TRACKED_DIR}")
     try:
         for entry in os.scandir(TRACKED_DIR):
@@ -273,7 +255,6 @@ def run_initial_sweep() -> None:
         logging.error(f"Error during initial folder sweep: {e}")
 
 def print_rules() -> None:
-    """Prints a beautiful summary of the configured routing rules."""
     print("\n\033[1;36m", end="")
     print(r"""
   ___  _      ___ _
@@ -296,11 +277,9 @@ def print_rules() -> None:
     print()
 
 def strip_ansi(s: str) -> str:
-    """Removes ANSI escape codes from a string to calculate its printable width."""
     return re.sub(r'\x1b\[[0-9;]*[a-zA-Z]|\033\[[0-9;]*[a-zA-Z]', '', s)
 
 def format_feed_line(line: str, width: int = 56) -> str:
-    """Safely pads or truncates activity feed lines containing ANSI escape sequences."""
     plain = strip_ansi(line)
     visible_len = len(plain)
     if visible_len >= width:
@@ -308,7 +287,6 @@ def format_feed_line(line: str, width: int = 56) -> str:
     return line + (" " * (width - visible_len))
 
 def draw_tui() -> None:
-    """Draws a live updating terminal dashboard with stats, activity, and uptime."""
     global spinner_idx
     
     uptime_secs = int(time.time() - start_time)
@@ -316,7 +294,6 @@ def draw_tui() -> None:
     mins, secs = divmod(remainder, 60)
     uptime_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
     
-    # ANSI escape characters
     clear_screen = "\033[H\033[J"
     cyan = "\033[1;36m"
     yellow = "\033[1;33m"
@@ -324,7 +301,6 @@ def draw_tui() -> None:
     bold = "\033[1m"
     reset = "\033[0m"
 
-    # Select spinner or active green dot depending on queue status
     q_size = processing_queue.qsize()
     if q_size > 0:
         status_icon = f"{yellow}{spinner_chars[spinner_idx]}{reset}"
@@ -334,7 +310,6 @@ def draw_tui() -> None:
         status_icon = f"{green}●{reset}"
         status_text = "Idle (Monitoring Directory)"
 
-    # Truncate tracked directory if it exceeds dashboard boundaries
     max_dir_len = 45
     truncated_dir = TRACKED_DIR
     if len(TRACKED_DIR) > max_dir_len:
@@ -347,9 +322,7 @@ def draw_tui() -> None:
  |___/|_|_|  |_| |_\___/\_/\_/ 
                                """ + f"{reset}")
     
-    # Render Dashboard Panel (Internal printable width: exactly 58 characters)
-    # Left border: "│ " (2 chars)
-    # Right border: " │" (2 chars)
+    # 58 printable characters internal panel width
     print(f"{cyan}┌────────────────────────────────────────────────────────────┐{reset}")
     print(f"{cyan}│ {bold}SYSTEM STATUS:{reset}                                            {cyan} │{reset}")
     print(f"{cyan}│ {reset}Engine:      {status_icon} {status_text:<43} {cyan}│{reset}")
@@ -361,7 +334,6 @@ def draw_tui() -> None:
     print(f"{cyan}├────────────────────────────────────────────────────────────┤{reset}")
     print(f"{cyan}│ {bold}RECENT ACTIVITY FEED:{reset}                                     {cyan} │{reset}")
     
-    # Print the last 6 actions or empty padding lines
     feed = list(recent_actions)
     for i in range(6):
         if i < len(feed):
@@ -376,7 +348,6 @@ def draw_tui() -> None:
 def main() -> None:
     global DRY_RUN, TRACKED_DIR, is_tui_active
 
-    # Windows ANSI Terminal Color support activation
     if os.name == 'nt':
         os.system('')
 
@@ -398,12 +369,10 @@ def main() -> None:
         print(f"Target directory does not exist: {TRACKED_DIR}", file=sys.stderr)
         sys.exit(1)
 
-    # Determine logging strategy:
     is_tui_active = sys.stdout.isatty() and not args.once and not args.dry_run
 
     root_logger = logging.getLogger()
     
-    # Enable RotatingFileHandler: 5MB maximum log file size with 3 backups
     log_file_path = os.path.join(os.path.dirname(__file__), "file-organizer.log")
     file_handler = RotatingFileHandler(log_file_path, maxBytes=5*1024*1024, backupCount=3, encoding='utf-8')
     file_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
@@ -418,7 +387,6 @@ def main() -> None:
         console_handler.setFormatter(ColorFormatter())
         root_logger.addHandler(console_handler)
 
-    # Start the lightweight processing queue worker thread
     worker_thread = threading.Thread(target=queue_worker, daemon=True)
     worker_thread.start()
 
@@ -440,7 +408,6 @@ def main() -> None:
     
     try:
         while True:
-            # Active self-monitoring: terminate daemon if any subthread crashes
             if not observer.is_alive():
                 logging.critical("Watchdog observer thread crashed. Terminating daemon.")
                 sys.exit(1)
@@ -450,17 +417,15 @@ def main() -> None:
 
             if is_tui_active:
                 draw_tui()
-            time.sleep(0.3)  # Decreased wait to speed up spinner animation
+            time.sleep(0.3)
     except KeyboardInterrupt:
         if is_tui_active:
-            # Clear terminal on exit
             sys.stdout.write("\033[H\033[J")
         logging.info("Shutting down file organizer daemon...")
         observer.stop()
     
     observer.join()
     
-    # Clean shutdown of worker thread
     processing_queue.put(None)
     worker_thread.join()
 
